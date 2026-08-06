@@ -4,20 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>tabie</title>
-<meta http-equiv="Content-Security-Policy"
-      content="default-src 'self';
-               script-src 'unsafe-inline' https://www.gstatic.com https://generativelanguage.googleapis.com;
-               style-src 'unsafe-inline' https://fonts.googleapis.com;
-               font-src https://fonts.gstatic.com;
-               img-src https://i.postimg.cc data:;
-               connect-src https://*.firebaseio.com https://*.googleapis.com https://generativelanguage.googleapis.com;
-               base-uri 'self';
-               form-action 'self';
-               frame-ancestors 'none';">
-<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous" referrerpolicy="no-referrer">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" referrerpolicy="no-referrer">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
-<link href="https://fonts.googleapis.com/css2?family=Material+Icons+Round" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Icons+Round" rel="stylesheet">
 <style>
 :root {
     --primary: #D32F2F;
@@ -926,6 +916,7 @@ main {
         transition-duration: 0.01ms !important;
     }
 }
+/* نتائج الطلاب */
 .result-card {
     background: var(--bg);
     border-radius: var(--radius-md);
@@ -1011,7 +1002,7 @@ main {
         <span class="material-icons-round">arrow_forward</span>
     </button>
     <div class="logo-area">
-        <img src="https://i.postimg.cc/D0yLDspd/shʿar-hdyth-ballwn-alabyd-walahmr-1.png" alt="tabie" id="logoImg" referrerpolicy="no-referrer" crossorigin="anonymous">
+        <img src="https://i.postimg.cc/D0yLDspd/shʿar-hdyth-ballwn-alabyd-walahmr-1.png" alt="tabie" id="logoImg">
     </div>
     <div class="topbar-titles">
         <div class="eyebrow" id="topEyebrow">منصة tabie</div>
@@ -1054,6 +1045,7 @@ main {
 
 </div>
 
+<!-- Modal للرسائل المنبثقة (Pop-up) -->
 <div class="modal-overlay" id="messageModalOverlay">
     <div class="modal-sheet" style="max-width:400px;">
         <div class="modal-body" style="padding-top:28px;">
@@ -1066,6 +1058,7 @@ main {
     </div>
 </div>
 
+<!-- Modal لإجراءات المادة (تعديل أو حذف) -->
 <div class="modal-overlay" id="actionModalOverlay">
     <div class="modal-sheet" style="max-width:400px;">
         <div class="modal-body" style="padding-top:28px;">
@@ -1080,6 +1073,7 @@ main {
     </div>
 </div>
 
+<!-- باقي المودالات -->
 <div class="modal-overlay" id="subjectModalOverlay">
     <div class="modal-sheet">
         <div class="modal-header">
@@ -1184,6 +1178,7 @@ main {
             </button>
             <div class="revealed-text" id="revealedAnswerKey"></div>
 
+            <!-- نتائج الطلاب -->
             <div style="margin-top:24px; border-top:2px solid var(--border); padding-top:16px;">
                 <h3 style="font-size:15px; font-weight:800; margin-bottom:12px;">نتائج الطلاب</h3>
                 <div id="resultsList"></div>
@@ -1282,8 +1277,7 @@ function showMessageModal(message, type = "info") {
         info: "info"
     };
     icon.innerHTML = `<span class="material-icons-round">${iconMap[type] || "info"}</span>`;
-    // استخدام textContent آمن بدلاً من innerHTML مع بيانات غير موثوقة
-    text.textContent = message;
+    text.innerHTML = escapeHtml(message);
     openModal("messageModalOverlay");
 }
 el("messageCloseBtn").addEventListener("click", () => {
@@ -1291,12 +1285,10 @@ el("messageCloseBtn").addEventListener("click", () => {
 });
 const showToast = showMessageModal;
 
-// دالة هروب محسنة تستخدم textContent داخلياً
 function escapeHtml(str) {
-    if (!str) return "";
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
+    const d = document.createElement("div");
+    d.textContent = str ?? "";
+    return d.innerHTML;
 }
 
 function openModal(id) {
@@ -1306,6 +1298,7 @@ function openModal(id) {
 function closeModal(id) {
     el(id).classList.remove("open");
     document.body.style.overflow = "";
+    // إذا كان المودال المغلق هو detailsModalOverlay، نلغي الاشتراك في النتائج
     if (id === "detailsModalOverlay" && state.unsubscribeResults) {
         state.unsubscribeResults();
         state.unsubscribeResults = null;
@@ -1627,18 +1620,14 @@ function openExamDetails(exam) {
     el("toggleExamTextBtn").querySelector("span:last-child").textContent = "عرض نص الامتحان";
     el("toggleAnswerKeyBtn").querySelector("span:last-child").textContent = "عرض نموذج الإجابة";
 
+    // جلب وعرض نتائج الطلاب لهذا الامتحان
     if (state.unsubscribeResults) {
         state.unsubscribeResults();
         state.unsubscribeResults = null;
     }
-    const qResults = query(resultsCol, where("examId", "==", exam.id));
+    const qResults = query(resultsCol, where("examId", "==", exam.id), orderBy("submittedAt", "desc"));
     state.unsubscribeResults = onSnapshot(qResults, (snap) => {
-        let results = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        results.sort((a, b) => {
-            const aTime = a.submittedAt?.toMillis?.() || 0;
-            const bTime = b.submittedAt?.toMillis?.() || 0;
-            return bTime - aTime;
-        });
+        const results = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         renderResults(results);
     }, (error) => {
         console.error("خطأ في جلب النتائج:", error);
@@ -1657,10 +1646,11 @@ function renderResults(results) {
     let html = "";
     results.forEach((result) => {
         const score = result.score || 0;
-        const total = 10;
+        const total = 10; // افتراضي حسب التصحيح السابق، يمكن تحسينه
         const feedback = result.feedback || "";
         const details = result.details || [];
         const studentName = result.studentName || "طالب";
+        // استخراج نقاط الضعف من الملاحظات أو من التفاصيل
         let weakness = "";
         if (feedback) {
             weakness = feedback;
@@ -1698,6 +1688,7 @@ function renderResults(results) {
     });
     container.innerHTML = html;
 
+    // إضافة حدث toggle للتفاصيل
     container.querySelectorAll(".result-toggle").forEach((toggle) => {
         toggle.addEventListener("click", () => {
             const id = toggle.dataset.resultId;
