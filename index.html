@@ -3,11 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>منصة الطالب - tabie</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Icons+Round" rel="stylesheet">
+<title>tabie</title>
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'unsafe-inline' https://www.gstatic.com https://generativelanguage.googleapis.com;
+               style-src 'unsafe-inline' https://fonts.googleapis.com;
+               font-src https://fonts.gstatic.com;
+               img-src https://i.postimg.cc data:;
+               connect-src https://*.firebaseio.com https://*.googleapis.com https://generativelanguage.googleapis.com;
+               base-uri 'self';
+               form-action 'self';
+               frame-ancestors 'none';">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link href="https://fonts.googleapis.com/css2?family=Material+Icons+Round" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
 <style>
 :root {
     --primary: #D32F2F;
@@ -249,6 +259,20 @@ main {
 .folder-icon-wrap .material-icons-round {
     font-size: 26px;
 }
+.folder-menu-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray);
+    transition: background var(--transition);
+}
+.folder-menu-btn:hover {
+    background: var(--bg);
+    color: var(--ink);
+}
 .folder-card h3 {
     font-size: 15px;
     font-weight: 800;
@@ -430,26 +454,55 @@ main {
     border-radius: 8px;
     transition: background var(--transition);
 }
-.btn-start {
-    background: var(--primary-gradient);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+.exam-card-actions .btn-view {
+    background: var(--primary-tint);
+    color: var(--primary-dark);
 }
-.btn-start:hover {
-    box-shadow: 0 6px 16px rgba(211, 47, 47, 0.4);
+.exam-card-actions .btn-view:hover {
+    background: #F5D6D4;
 }
-.btn-start:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    box-shadow: none;
-}
-.btn-secondary {
+.exam-card-actions .btn-edit {
     background: var(--bg);
     color: var(--ink);
-    border: 1.5px solid var(--border);
 }
-.btn-secondary:hover {
+.exam-card-actions .btn-edit:hover {
     background: #E9EEF8;
+}
+.exam-card-actions .btn-delete {
+    background: var(--danger-tint);
+    color: var(--danger);
+}
+.exam-card-actions .btn-delete:hover {
+    background: #FBDCDC;
+}
+.exam-card-actions .material-icons-round {
+    font-size: 16px;
+}
+.fab {
+    position: fixed;
+    bottom: 28px;
+    inset-inline-end: 24px;
+    z-index: 30;
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: var(--primary-gradient);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 28px rgba(211, 47, 47, 0.4);
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+.fab:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 14px 36px rgba(211, 47, 47, 0.45);
+}
+.fab:active {
+    transform: scale(0.94);
+}
+.fab .material-icons-round {
+    font-size: 28px;
 }
 .modal-overlay {
     position: fixed;
@@ -542,8 +595,16 @@ main {
     color: var(--ink);
     margin-bottom: 6px;
 }
+.field .hint {
+    font-size: 11.5px;
+    color: var(--gray);
+    margin-top: 5px;
+    line-height: 1.5;
+}
 .field input[type="text"],
-.field input[type="number"] {
+.field input[type="datetime-local"],
+.field select,
+.field textarea {
     width: 100%;
     padding: 12px 14px;
     border-radius: 12px;
@@ -553,11 +614,47 @@ main {
     color: var(--ink);
     transition: border-color var(--transition), background var(--transition);
 }
-.field input:focus {
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
     outline: none;
     border-color: var(--primary);
     background: var(--surface);
     box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.08);
+}
+.field textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.7;
+}
+.field textarea.large {
+    min-height: 160px;
+}
+.field.invalid input,
+.field.invalid select,
+.field.invalid textarea {
+    border-color: var(--danger);
+    background: var(--danger-tint);
+}
+.field .error-text {
+    display: none;
+    color: var(--danger);
+    font-size: 11.5px;
+    font-weight: 700;
+    margin-top: 6px;
+}
+.field.invalid .error-text {
+    display: block;
+}
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+@media (min-width: 520px) {
+    .two-col {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 .btn {
     display: flex;
@@ -606,6 +703,33 @@ main {
     opacity: 0.6;
     pointer-events: none;
 }
+.duration-select-wrap {
+    position: relative;
+}
+.duration-select-wrap .material-icons-round {
+    position: absolute;
+    inset-inline-start: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary);
+    font-size: 19px;
+    pointer-events: none;
+}
+.duration-select-wrap select {
+    padding-inline-start: 40px;
+    appearance: none;
+}
+.duration-select-wrap::after {
+    content: "expand_more";
+    font-family: "Material Icons Round";
+    position: absolute;
+    inset-inline-end: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray);
+    font-size: 19px;
+    pointer-events: none;
+}
 .confirm-icon {
     width: 64px;
     height: 64px;
@@ -640,6 +764,80 @@ main {
 .confirm-text strong {
     color: var(--ink);
 }
+.details-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg);
+    border-radius: 10px;
+    font-size: 13px;
+}
+.detail-row .label {
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+.detail-row .label .material-icons-round {
+    font-size: 17px;
+    color: var(--primary);
+}
+.detail-row .value {
+    font-weight: 800;
+    color: var(--ink);
+}
+.detail-row.status .value.available {
+    color: var(--success);
+}
+.detail-row.status .value.upcoming {
+    color: var(--warning);
+}
+.detail-row.status .value.ended {
+    color: var(--danger);
+}
+.toggle-text-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--primary-tint);
+    color: var(--primary-dark);
+    font-weight: 700;
+    font-size: 13px;
+    margin-top: 8px;
+    transition: background var(--transition);
+}
+.toggle-text-btn:hover {
+    background: #F5D6D4;
+}
+.toggle-text-btn .material-icons-round {
+    font-size: 18px;
+}
+.revealed-text {
+    margin-top: 10px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.9;
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    display: none;
+}
+.revealed-text.open {
+    display: block;
+}
 .loading-overlay {
     position: fixed;
     inset: 0;
@@ -668,7 +866,9 @@ main {
     animation: spin 0.85s linear infinite;
 }
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 .loading-overlay p {
     font-size: 15px;
@@ -687,125 +887,119 @@ main {
     animation: view-in 0.3s ease;
 }
 @keyframes view-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
-.exam-question {
+.skeleton-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: 18px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
+    height: 150px;
+    position: relative;
+    overflow: hidden;
 }
-.exam-question .q-number {
-    font-weight: 800;
-    color: var(--primary);
-    font-size: 14px;
-    margin-bottom: 6px;
+.skeleton-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(211, 47, 47, 0.06), transparent);
+    animation: shimmer 1.4s infinite;
 }
-.exam-question .q-text {
-    font-size: 15px;
-    line-height: 1.8;
-    margin-bottom: 12px;
-    white-space: pre-wrap;
+@keyframes shimmer {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(100%);
+    }
 }
-.exam-question textarea {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1.5px solid var(--border);
-    background: var(--bg);
-    font-size: 14px;
-    color: var(--ink);
-    transition: border-color var(--transition), background var(--transition);
-    resize: vertical;
-    min-height: 80px;
-    font-family: inherit;
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }
-.exam-question textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    background: var(--surface);
-}
-.exam-timer {
-    position: sticky;
-    top: 72px;
-    z-index: 20;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: var(--shadow-sm);
-    margin: 0 -20px 20px -20px;
-    padding-left: 40px;
-    padding-right: 40px;
-}
-.exam-timer .timer {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--primary);
-    direction: ltr;
-    font-family: monospace;
-}
-.exam-timer .timer.warning {
-    color: var(--danger);
-    animation: pulse 1s infinite;
-}
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-.result-item {
+.result-card {
     background: var(--bg);
     border-radius: var(--radius-md);
-    padding: 16px;
+    padding: 14px 16px;
     margin-bottom: 12px;
-    border-right: 4px solid var(--primary);
+    border-right: 3px solid var(--primary);
 }
-.result-item .q-header {
+.result-card .result-header {
     display: flex;
     justify-content: space-between;
-    font-weight: 700;
+    align-items: center;
     margin-bottom: 6px;
 }
-.result-item .q-header .q-score {
-    color: var(--primary);
+.result-card .student-name {
+    font-weight: 800;
+    font-size: 14px;
 }
-.result-item .q-details {
+.result-card .student-score {
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-tint);
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+}
+.result-card .result-details {
     font-size: 13px;
     color: var(--gray);
-    line-height: 1.8;
+    line-height: 1.6;
 }
-.result-item .q-details .correct {
+.result-card .result-details .weakness {
+    color: var(--danger);
+    font-weight: 600;
+}
+.result-card .result-toggle {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.result-card .result-toggle:hover {
+    text-decoration: underline;
+}
+.result-card .result-full {
+    display: none;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+}
+.result-card .result-full.open {
+    display: block;
+}
+.result-card .result-full .q-item {
+    margin-bottom: 8px;
+    padding: 8px;
+    background: var(--surface);
+    border-radius: 8px;
+}
+.result-card .result-full .q-item .q-text {
+    font-weight: 600;
+}
+.result-card .result-full .q-item .q-answer {
+    color: var(--gray);
+}
+.result-card .result-full .q-item .q-correct {
     color: var(--success);
 }
-.result-item .q-details .wrong {
+.result-card .result-full .q-item .q-wrong {
     color: var(--danger);
-}
-.result-item .q-details .feedback {
-    color: var(--ink);
-    font-weight: 600;
-    margin-top: 4px;
-}
-.final-score {
-    text-align: center;
-    padding: 24px;
-    background: var(--primary-tint);
-    border-radius: var(--radius-md);
-    margin-bottom: 24px;
-}
-.final-score .score-number {
-    font-size: 48px;
-    font-weight: 900;
-    color: var(--primary);
-}
-.final-score .score-label {
-    font-size: 16px;
-    color: var(--gray);
 }
 </style>
 </head>
@@ -817,11 +1011,11 @@ main {
         <span class="material-icons-round">arrow_forward</span>
     </button>
     <div class="logo-area">
-        <img src="https://i.postimg.cc/D0yLDspd/shʿar-hdyth-ballwn-alabyd-walahmr-1.png" alt="tabie">
+        <img src="https://i.postimg.cc/D0yLDspd/shʿar-hdyth-ballwn-alabyd-walahmr-1.png" alt="tabie" id="logoImg" referrerpolicy="no-referrer" crossorigin="anonymous">
     </div>
     <div class="topbar-titles">
-        <div class="eyebrow" id="topEyebrow">منصة الطالب</div>
-        <h1 id="topTitle">المواد الدراسية</h1>
+        <div class="eyebrow" id="topEyebrow">منصة tabie</div>
+        <h1 id="topTitle">لوحة تحكم الامتحانات</h1>
     </div>
     <div class="topbar-stat" id="topStat">
         <span class="material-icons-round">folder</span>
@@ -830,10 +1024,11 @@ main {
 </header>
 
 <main>
+
     <section class="view active" id="homeView">
         <div class="section-heading">
             <h2>المواد الدراسية</h2>
-            <span class="count-pill" id="subjectsCountPill">0 مادة</span>
+            <span class="count-pill" id="subjectsCountPill">0 مواد</span>
         </div>
         <div class="grid" id="subjectsGrid"></div>
     </section>
@@ -851,36 +1046,11 @@ main {
         <div class="grid" id="examsGrid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));"></div>
     </section>
 
-    <section class="view" id="examView">
-        <div class="breadcrumb">
-            <button id="examCrumbHome">الرئيسية</button>
-            <span class="material-icons-round">chevron_left</span>
-            <button id="examCrumbSubject">المادة</button>
-            <span class="material-icons-round">chevron_left</span>
-            <span class="current" id="examCrumbCurrent">الامتحان</span>
-        </div>
-        <div class="exam-timer" id="examTimerBar">
-            <span>الوقت المتبقي</span>
-            <span class="timer" id="timerDisplay">00:00</span>
-        </div>
-        <div id="examQuestionsContainer"></div>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn btn-primary" id="submitExamBtn"><span class="material-icons-round">send</span>إرسال الامتحان</button>
-            <button class="btn btn-secondary" id="exitExamBtn">خروج</button>
-        </div>
-    </section>
-
-    <section class="view" id="resultView">
-        <div class="breadcrumb">
-            <button id="resultHome">الرئيسية</button>
-            <span class="material-icons-round">chevron_left</span>
-            <button id="resultSubject">المادة</button>
-            <span class="material-icons-round">chevron_left</span>
-            <span class="current">النتيجة</span>
-        </div>
-        <div id="resultContent"></div>
-    </section>
 </main>
+
+<button class="fab" id="fabBtn" aria-label="إضافة">
+    <span class="material-icons-round" id="fabIcon">add</span>
+</button>
 
 </div>
 
@@ -896,21 +1066,131 @@ main {
     </div>
 </div>
 
-<div class="modal-overlay" id="nameModalOverlay">
+<div class="modal-overlay" id="actionModalOverlay">
     <div class="modal-sheet" style="max-width:400px;">
+        <div class="modal-body" style="padding-top:28px;">
+            <div class="confirm-icon info"><span class="material-icons-round">more_vert</span></div>
+            <div class="confirm-text" id="actionModalText">اختر الإجراء للمادة</div>
+        </div>
+        <div class="modal-footer" style="gap:8px;">
+            <button class="btn btn-secondary" id="actionEditBtn"><span class="material-icons-round">edit</span>تعديل</button>
+            <button class="btn btn-danger" id="actionDeleteBtn"><span class="material-icons-round">delete</span>حذف</button>
+            <button class="btn btn-secondary" id="actionCancelBtn" data-close="actionModalOverlay">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="subjectModalOverlay">
+    <div class="modal-sheet">
         <div class="modal-header">
-            <h2>أدخل اسمك</h2>
-            <button class="modal-close" data-close="nameModalOverlay"><span class="material-icons-round">close</span></button>
+            <h2 id="subjectModalTitle">مادة جديدة</h2>
+            <button class="modal-close" data-close="subjectModalOverlay"><span class="material-icons-round">close</span></button>
         </div>
         <div class="modal-body">
-            <div class="field">
-                <label>الاسم الكامل</label>
-                <input type="text" id="studentNameInput" placeholder="أدخل اسمك" maxlength="100">
+            <div class="field" id="subjectNameField">
+                <label>اسم المادة</label>
+                <input type="text" id="subjectNameInput" placeholder="مثال: اللغة العربية" maxlength="60">
+                <div class="error-text">من فضلك اكتب اسم المادة</div>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" data-close="nameModalOverlay">إلغاء</button>
-            <button class="btn btn-primary" id="startExamConfirmBtn"><span class="material-icons-round">play_arrow</span>بدء الامتحان</button>
+            <button class="btn btn-secondary" data-close="subjectModalOverlay">إلغاء</button>
+            <button class="btn btn-primary" id="saveSubjectBtn"><span class="material-icons-round">check</span><span>حفظ</span></button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="examModalOverlay">
+    <div class="modal-sheet">
+        <div class="modal-header">
+            <h2 id="examModalTitle">إنشاء امتحان</h2>
+            <button class="modal-close" data-close="examModalOverlay"><span class="material-icons-round">close</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="field" id="examTitleField">
+                <label>اسم الامتحان</label>
+                <input type="text" id="examTitleInput" placeholder="مثال: امتحان الوحدة الأولى" maxlength="120">
+                <div class="error-text">من فضلك اكتب اسم الامتحان</div>
+            </div>
+            <div class="field" id="examTextField">
+                <label>نص الامتحان</label>
+                <textarea id="examTextInput" class="large" placeholder="اكتب أو الصق نص الامتحان كاملاً كما سيظهر للطالب"></textarea>
+                <div class="hint">يتم حفظ النص حرفيًا دون أي تعديل.</div>
+                <div class="error-text">من فضلك اكتب نص الامتحان</div>
+            </div>
+            <div class="field" id="answerKeyField">
+                <label>نموذج الإجابة</label>
+                <textarea id="answerKeyInput" placeholder="اكتب نموذج الإجابة الكامل"></textarea>
+                <div class="hint">يتم حفظ النموذج حرفيًا دون أي تعديل.</div>
+                <div class="error-text">من فضلك اكتب نموذج الإجابة</div>
+            </div>
+            <div class="field" id="durationField">
+                <label>مدة الامتحان</label>
+                <div class="duration-select-wrap">
+                    <span class="material-icons-round">timer</span>
+                    <select id="durationSelect">
+                        <option value="">اختر المدة</option>
+                        <option value="2">دقيقتان</option>
+                        <option value="5">5 دقائق</option>
+                        <option value="10">10 دقائق</option>
+                        <option value="15">15 دقيقة</option>
+                        <option value="20">20 دقيقة</option>
+                        <option value="30">30 دقيقة</option>
+                        <option value="45">45 دقيقة</option>
+                        <option value="60">60 دقيقة</option>
+                        <option value="90">90 دقيقة</option>
+                        <option value="120">120 دقيقة</option>
+                        <option value="180">180 دقيقة</option>
+                    </select>
+                </div>
+                <div class="error-text">من فضلك اختر مدة الامتحان</div>
+            </div>
+            <div class="two-col">
+                <div class="field" id="startTimeField">
+                    <label>وقت البداية</label>
+                    <input type="datetime-local" id="startTimeInput">
+                    <div class="error-text">من فضلك حدد وقت البداية</div>
+                </div>
+                <div class="field" id="endTimeField">
+                    <label>وقت النهاية</label>
+                    <input type="datetime-local" id="endTimeInput">
+                    <div class="error-text">وقت النهاية يجب أن يكون بعد وقت البداية</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="examModalOverlay">إلغاء</button>
+            <button class="btn btn-primary" id="saveExamBtn"><span class="material-icons-round">auto_awesome</span><span id="saveExamBtnLabel">إنشاء الامتحان</span></button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="detailsModalOverlay">
+    <div class="modal-sheet">
+        <div class="modal-header">
+            <h2 id="detailsExamTitle">تفاصيل الامتحان</h2>
+            <button class="modal-close" data-close="detailsModalOverlay"><span class="material-icons-round">close</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="details-grid" id="detailsGrid"></div>
+            <button class="toggle-text-btn" id="toggleExamTextBtn">
+                <span class="material-icons-round">description</span>
+                <span>عرض نص الامتحان</span>
+            </button>
+            <div class="revealed-text" id="revealedExamText"></div>
+            <button class="toggle-text-btn" id="toggleAnswerKeyBtn" style="margin-top:10px;">
+                <span class="material-icons-round">fact_check</span>
+                <span>عرض نموذج الإجابة</span>
+            </button>
+            <div class="revealed-text" id="revealedAnswerKey"></div>
+
+            <div style="margin-top:24px; border-top:2px solid var(--border); padding-top:16px;">
+                <h3 style="font-size:15px; font-weight:800; margin-bottom:12px;">نتائج الطلاب</h3>
+                <div id="resultsList"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="detailsModalOverlay">إغلاق</button>
         </div>
     </div>
 </div>
@@ -918,27 +1198,27 @@ main {
 <div class="modal-overlay" id="confirmModalOverlay">
     <div class="modal-sheet" style="max-width:400px;">
         <div class="modal-body" style="padding-top:28px;">
-            <div class="confirm-icon error"><span class="material-icons-round">warning</span></div>
+            <div class="confirm-icon error"><span class="material-icons-round" id="confirmIcon">delete</span></div>
             <div class="confirm-text" id="confirmText"></div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" data-close="confirmModalOverlay">إلغاء</button>
-            <button class="btn btn-danger" id="confirmActionBtn"><span class="material-icons-round">check</span>تأكيد</button>
+            <button class="btn btn-danger" id="confirmActionBtn"><span class="material-icons-round">check</span><span>تأكيد</span></button>
         </div>
     </div>
 </div>
 
 <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
-    <p id="loadingTitle">جاري التحميل</p>
-    <span id="loadingSubtitle">يرجى الانتظار</span>
+    <p id="loadingTitle">جاري تنظيم الامتحان</p>
+    <span id="loadingSubtitle">من فضلك انتظر قليلاً</span>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import {
     getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
-    onSnapshot, query, orderBy, serverTimestamp, getDocs, where
+    onSnapshot, query, orderBy, serverTimestamp, getDocs, writeBatch, where
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -951,19 +1231,33 @@ const firebaseConfig = {
 };
 
 const GEMINI_API_KEY = "AIzaSyCpLnXNX-TdBtt_0yVAh7vMMRJRjBtr7gQ";
-const GEMINI_MODEL = "gemini-1.5-flash";
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
+const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
 const subjectsCol = collection(db, "subjects");
 const examsCol = collection(db, "exams");
 const resultsCol = collection(db, "results");
 
+const state = {
+    subjects: [],
+    exams: [],
+    currentSubjectId: null,
+    currentSubjectName: "",
+    editingSubjectId: null,
+    editingExamId: null,
+    pendingConfirmAction: null,
+    detailsExam: null,
+    activeSubject: null,
+    unsubscribeResults: null
+};
+
 const el = (id) => document.getElementById(id);
+
 const homeView = el("homeView");
 const subjectView = el("subjectView");
-const examView = el("examView");
-const resultView = el("resultView");
 const subjectsGrid = el("subjectsGrid");
 const examsGrid = el("examsGrid");
 const backBtn = el("backBtn");
@@ -974,57 +1268,61 @@ const subjectsCountPill = el("subjectsCountPill");
 const examsCountPill = el("examsCountPill");
 const crumbCurrent = el("crumbCurrent");
 const subjectViewHeading = el("subjectViewHeading");
-const timerDisplay = el("timerDisplay");
-const examQuestionsContainer = el("examQuestionsContainer");
-const submitExamBtn = el("submitExamBtn");
-const exitExamBtn = el("exitExamBtn");
-
-const state = {
-    subjects: [],
-    exams: [],
-    currentSubjectId: null,
-    currentSubjectName: "",
-    currentExam: null,
-    studentName: "",
-    answers: [],
-    timerInterval: null,
-    timeRemaining: 0,
-    totalSeconds: 0,
-    isSubmitted: false,
-    resultData: null,
-    examsBySubject: {}
-};
+const fabBtn = el("fabBtn");
+const fabIcon = el("fabIcon");
 
 function showMessageModal(message, type = "info") {
     const overlay = el("messageModalOverlay");
     const icon = el("messageIcon");
     const text = el("messageText");
     icon.className = `confirm-icon ${type}`;
-    const iconMap = { success: "check_circle", error: "error", info: "info" };
+    const iconMap = {
+        success: "check_circle",
+        error: "error",
+        info: "info"
+    };
     icon.innerHTML = `<span class="material-icons-round">${iconMap[type] || "info"}</span>`;
-    text.innerHTML = message;
+    text.textContent = message;
     openModal("messageModalOverlay");
 }
-el("messageCloseBtn").addEventListener("click", () => closeModal("messageModalOverlay"));
-function openModal(id) { el(id).classList.add("open"); document.body.style.overflow = "hidden"; }
-function closeModal(id) { el(id).classList.remove("open"); document.body.style.overflow = ""; }
+el("messageCloseBtn").addEventListener("click", () => {
+    closeModal("messageModalOverlay");
+});
+const showToast = showMessageModal;
+
+function escapeHtml(str) {
+    if (!str) return "";
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function openModal(id) {
+    el(id).classList.add("open");
+    document.body.style.overflow = "hidden";
+}
+function closeModal(id) {
+    el(id).classList.remove("open");
+    document.body.style.overflow = "";
+    if (id === "detailsModalOverlay" && state.unsubscribeResults) {
+        state.unsubscribeResults();
+        state.unsubscribeResults = null;
+    }
+}
 document.querySelectorAll("[data-close]").forEach((btn) => {
     btn.addEventListener("click", () => closeModal(btn.dataset.close));
 });
 document.querySelectorAll(".modal-overlay").forEach((overlay) => {
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(overlay.id); });
+    overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeModal(overlay.id);
+    });
 });
+
 function setLoading(open, title, subtitle) {
     const overlay = el("loadingOverlay");
     if (title) el("loadingTitle").textContent = title;
     if (subtitle) el("loadingSubtitle").textContent = subtitle;
     overlay.classList.toggle("open", open);
-}
-
-function escapeHtml(str) {
-    const d = document.createElement("div");
-    d.textContent = str ?? "";
-    return d.innerHTML;
 }
 
 function formatDate(ts) {
@@ -1055,89 +1353,34 @@ function statusLabel(status) {
 
 function switchToHome() {
     state.currentSubjectId = null;
-    state.currentExam = null;
     homeView.classList.add("active");
     subjectView.classList.remove("active");
-    examView.classList.remove("active");
-    resultView.classList.remove("active");
     backBtn.style.display = "none";
-    topEyebrow.textContent = "منصة الطالب";
-    topTitle.textContent = "المواد الدراسية";
+    topEyebrow.textContent = "منصة tabie";
+    topTitle.textContent = "لوحة تحكم الامتحانات";
     topStatValue.textContent = String(state.subjects.length);
     el("topStat").querySelector(".material-icons-round").textContent = "folder";
+    fabIcon.textContent = "add";
     renderSubjects();
-    if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
 }
 
 function switchToSubject(subjectId, subjectName) {
     state.currentSubjectId = subjectId;
     state.currentSubjectName = subjectName;
-    state.currentExam = null;
     homeView.classList.remove("active");
     subjectView.classList.add("active");
-    examView.classList.remove("active");
-    resultView.classList.remove("active");
     backBtn.style.display = "flex";
     topEyebrow.textContent = "مادة دراسية";
     topTitle.textContent = subjectName;
     crumbCurrent.textContent = subjectName;
     subjectViewHeading.textContent = `امتحانات ${subjectName}`;
     el("topStat").querySelector(".material-icons-round").textContent = "quiz";
+    fabIcon.textContent = "add";
     listenExams(subjectId);
 }
 
-function switchToExam(exam) {
-    state.currentExam = exam;
-    homeView.classList.remove("active");
-    subjectView.classList.remove("active");
-    examView.classList.add("active");
-    resultView.classList.remove("active");
-    topEyebrow.textContent = "امتحان";
-    topTitle.textContent = exam.title;
-    el("examCrumbCurrent").textContent = exam.title;
-    el("examCrumbSubject").textContent = state.currentSubjectName;
-    el("examCrumbSubject").dataset.subjectId = state.currentSubjectId;
-    renderExam(exam);
-}
-
-function switchToResult(resultData) {
-    state.resultData = resultData;
-    homeView.classList.remove("active");
-    subjectView.classList.remove("active");
-    examView.classList.remove("active");
-    resultView.classList.add("active");
-    topEyebrow.textContent = "النتيجة";
-    topTitle.textContent = "نتيجة الامتحان";
-    renderResult(resultData);
-}
-
-backBtn.addEventListener("click", () => {
-    if (resultView.classList.contains("active")) {
-        switchToSubject(state.currentSubjectId, state.currentSubjectName);
-    } else if (examView.classList.contains("active")) {
-        if (state.isSubmitted) {
-            switchToSubject(state.currentSubjectId, state.currentSubjectName);
-        } else {
-            if (confirm("هل تريد الخروج من الامتحان؟ سيتم فقدان الإجابات.")) {
-                if (state.timerInterval) clearInterval(state.timerInterval);
-                switchToSubject(state.currentSubjectId, state.currentSubjectName);
-            }
-        }
-    } else if (subjectView.classList.contains("active")) {
-        switchToHome();
-    }
-});
+backBtn.addEventListener("click", switchToHome);
 el("crumbHome").addEventListener("click", switchToHome);
-el("examCrumbHome").addEventListener("click", switchToHome);
-el("examCrumbSubject").addEventListener("click", () => {
-    const id = el("examCrumbSubject").dataset.subjectId;
-    const name = state.currentSubjectName;
-    if (id) switchToSubject(id, name);
-});
-el("resultHome").addEventListener("click", switchToHome);
-el("resultSubject").addEventListener("click", () => {
-    if (state.currentSubjectId) switchToSubject(state.currentSubjectId, state.currentSubjectName);
-});
 
 function listenSubjects() {
     const q = query(subjectsCol, orderBy("createdAt", "desc"));
@@ -1148,36 +1391,26 @@ function listenSubjects() {
             renderSubjects();
         }
     });
-
-    onSnapshot(examsCol, (snap) => {
-        const counts = {};
-        snap.docs.forEach(d => {
-            const data = d.data();
-            const sid = data.subjectId;
-            if (sid) counts[sid] = (counts[sid] || 0) + 1;
-        });
-        state.examsBySubject = counts;
-        if (!state.currentSubjectId) renderSubjects();
-    });
 }
 
 function renderSubjects() {
-    subjectsCountPill.textContent = `${state.subjects.length} مادة`;
+    subjectsCountPill.textContent = `${state.subjects.length} مواد`;
     if (state.subjects.length === 0) {
         subjectsGrid.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon"><span class="material-icons-round">folder_open</span></div>
-          <h3>لا توجد مواد دراسية</h3>
-          <p>ليس هناك مواد متاحة حالياً.</p>
+          <h3>لا توجد مواد دراسية بعد</h3>
+          <p>اضغط على زر الإضافة لإنشاء أول مادة دراسية وابدأ في تنظيم الامتحانات.</p>
         </div>`;
         return;
     }
     subjectsGrid.innerHTML = state.subjects.map((subject) => {
-        const count = state.examsBySubject[subject.id] || 0;
+        const count = state.examsBySubject?.[subject.id] ?? 0;
         return `
         <div class="folder-card" data-id="${subject.id}" data-name="${escapeHtml(subject.name)}">
           <div class="folder-top">
             <div class="folder-icon-wrap"><span class="material-icons-round">folder</span></div>
+            <button class="folder-menu-btn" data-action="menu" data-id="${subject.id}"><span class="material-icons-round">more_vert</span></button>
           </div>
           <h3>${escapeHtml(subject.name)}</h3>
           <div class="folder-meta">
@@ -1189,28 +1422,125 @@ function renderSubjects() {
 }
 
 subjectsGrid.addEventListener("click", (e) => {
+    const menuBtn = e.target.closest("[data-action='menu']");
+    if (menuBtn) {
+        e.stopPropagation();
+        const id = menuBtn.dataset.id;
+        const subject = state.subjects.find((s) => s.id === id);
+        if (subject) openSubjectActions(subject);
+        return;
+    }
     const card = e.target.closest(".folder-card");
     if (card) {
         switchToSubject(card.dataset.id, card.dataset.name);
     }
 });
 
-function listenExams(subjectId) {
-    const q = query(examsCol, where("subjectId", "==", subjectId));
-    onSnapshot(q, (snap) => {
-        let exams = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        exams.sort((a, b) => {
-            const aTime = a.createdAt?.toMillis?.() || 0;
-            const bTime = b.createdAt?.toMillis?.() || 0;
-            return bTime - aTime;
+function openSubjectActions(subject) {
+    state.activeSubject = subject;
+    el("actionModalText").innerHTML = `اختر الإجراء لمادة <strong>${escapeHtml(subject.name)}</strong>`;
+    openModal("actionModalOverlay");
+}
+
+el("actionEditBtn").addEventListener("click", () => {
+    closeModal("actionModalOverlay");
+    const subject = state.activeSubject;
+    if (!subject) return;
+    state.editingSubjectId = subject.id;
+    el("subjectModalTitle").textContent = "تعديل المادة";
+    el("subjectNameInput").value = subject.name;
+    el("subjectNameField").classList.remove("invalid");
+    openModal("subjectModalOverlay");
+    setTimeout(() => el("subjectNameInput").focus(), 200);
+    state.activeSubject = null;
+});
+
+el("actionDeleteBtn").addEventListener("click", () => {
+    closeModal("actionModalOverlay");
+    const subject = state.activeSubject;
+    if (!subject) return;
+    askDeleteSubject(subject);
+    state.activeSubject = null;
+});
+
+el("actionCancelBtn").addEventListener("click", () => {
+    closeModal("actionModalOverlay");
+    state.activeSubject = null;
+});
+
+async function updateSubjectName(id, name) {
+    try {
+        await updateDoc(doc(db, "subjects", id), { name });
+        showToast("تم تحديث اسم المادة", "success");
+    } catch (err) {
+        showToast("حدث خطأ أثناء التحديث", "error");
+    }
+}
+
+function askDeleteSubject(subject) {
+    const examCount = state.exams.filter((e) => e.subjectId === subject.id).length;
+    el("confirmText").innerHTML = `هل تريد حذف مادة <strong>${escapeHtml(subject.name)}</strong> بالكامل؟${examCount > 0 ? ` سيتم حذف <strong>${examCount}</strong> امتحان مرتبط بها أيضًا.` : ""} لا يمكن التراجع عن هذا الإجراء.`;
+    state.pendingConfirmAction = () => deleteSubjectCascade(subject.id);
+    openModal("confirmModalOverlay");
+}
+
+async function deleteSubjectCascade(subjectId) {
+    try {
+        setLoading(true, "جاري الحذف", "يرجى الانتظار");
+        const examsSnap = await getDocs(query(examsCol));
+        const batch = writeBatch(db);
+        examsSnap.docs.forEach((d) => {
+            if (d.data().subjectId === subjectId) batch.delete(doc(db, "exams", d.id));
         });
-        state.exams = exams;
-        state.examsBySubject[subjectId] = exams.length;
-        if (!state.currentSubjectId || state.currentSubjectId !== subjectId) return;
-        renderExams(exams);
-    }, (error) => {
-        console.error("خطأ في الاستماع للامتحانات:", error);
-        showMessageModal("حدث خطأ في تحميل الامتحانات: " + error.message, "error");
+        batch.delete(doc(db, "subjects", subjectId));
+        await batch.commit();
+        showToast("تم حذف المادة", "success");
+        if (state.currentSubjectId === subjectId) switchToHome();
+    } catch (err) {
+        showToast("حدث خطأ أثناء الحذف", "error");
+    } finally {
+        setLoading(false);
+    }
+}
+
+el("saveSubjectBtn").addEventListener("click", async () => {
+    const input = el("subjectNameInput");
+    const name = input.value.trim();
+    if (!name) {
+        el("subjectNameField").classList.add("invalid");
+        return;
+    }
+    el("subjectNameField").classList.remove("invalid");
+    const btn = el("saveSubjectBtn");
+    btn.disabled = true;
+    try {
+        if (state.editingSubjectId) {
+            await updateDoc(doc(db, "subjects", state.editingSubjectId), { name });
+            showToast("تم تحديث المادة", "success");
+        } else {
+            await addDoc(subjectsCol, { name, createdAt: serverTimestamp() });
+            showToast("تم إنشاء المادة", "success");
+        }
+        closeModal("subjectModalOverlay");
+        state.editingSubjectId = null;
+    } catch (err) {
+        showToast("حدث خطأ أثناء الحفظ", "error");
+    } finally {
+        btn.disabled = false;
+    }
+});
+
+function listenExams(subjectId) {
+    const q = query(examsCol, orderBy("createdAt", "desc"));
+    onSnapshot(q, (snap) => {
+        const allExams = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        state.exams = allExams;
+        const counts = {};
+        allExams.forEach((e) => { counts[e.subjectId] = (counts[e.subjectId] || 0) + 1; });
+        state.examsBySubject = counts;
+        if (!state.currentSubjectId) { renderSubjects(); return; }
+        const filtered = allExams.filter((e) => e.subjectId === state.currentSubjectId);
+        renderExams(filtered);
     });
 }
 
@@ -1221,15 +1551,12 @@ function renderExams(exams) {
         <div class="empty-state">
           <div class="empty-icon"><span class="material-icons-round">quiz</span></div>
           <h3>لا توجد امتحانات في هذه المادة</h3>
-          <p>لا توجد امتحانات متاحة حالياً.</p>
+          <p>اضغط على زر الإضافة لإنشاء أول امتحان في هذه المادة.</p>
         </div>`;
         return;
     }
     examsGrid.innerHTML = exams.map((exam) => {
         const status = getExamStatus(exam);
-        let canStart = status === "available";
-        const doneKey = `exam_${exam.id}_done`;
-        if (localStorage.getItem(doneKey) === "true") canStart = false;
         return `
         <div class="exam-card" data-id="${exam.id}">
           <div class="exam-card-head">
@@ -1237,300 +1564,359 @@ function renderExams(exams) {
             <span class="status-badge ${status}"><span class="dot"></span>${statusLabel(status)}</span>
           </div>
           <div class="exam-meta-grid">
+            <div class="exam-meta-item"><span class="material-icons-round">event</span>${formatDate(exam.createdAt)}</div>
             <div class="exam-meta-item"><span class="material-icons-round">timer</span>${minutesToLabel(exam.duration)}</div>
             <div class="exam-meta-item"><span class="material-icons-round">play_circle</span>${formatDateTime(exam.startTime)}</div>
             <div class="exam-meta-item"><span class="material-icons-round">stop_circle</span>${formatDateTime(exam.endTime)}</div>
           </div>
           <div class="exam-card-actions">
-            <button class="btn-start" data-action="start" data-id="${exam.id}" ${!canStart ? 'disabled' : ''}>
-              <span class="material-icons-round">play_arrow</span>${canStart ? 'ابدأ الامتحان' : (localStorage.getItem(`exam_${exam.id}_done`) === "true" ? 'تم الأداء' : 'غير متاح')}
-            </button>
+            <button class="btn-view" data-action="view" data-id="${exam.id}"><span class="material-icons-round">visibility</span>عرض</button>
+            <button class="btn-edit" data-action="edit" data-id="${exam.id}"><span class="material-icons-round">edit</span>تعديل</button>
+            <button class="btn-delete" data-action="delete" data-id="${exam.id}"><span class="material-icons-round">delete</span>حذف</button>
           </div>
         </div>`;
     }).join("");
 }
 
 examsGrid.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-action='start']");
+    const btn = e.target.closest("button[data-action]");
     if (!btn) return;
     const id = btn.dataset.id;
     const exam = state.exams.find((ex) => ex.id === id);
     if (!exam) return;
-    if (getExamStatus(exam) !== "available") {
-        showMessageModal("هذا الامتحان غير متاح حالياً.", "error");
-        return;
-    }
-    const doneKey = `exam_${id}_done`;
-    if (localStorage.getItem(doneKey) === "true") {
-        showMessageModal("لقد أديت هذا الامتحان بالفعل، لا يمكنك إعادة فتحه.", "error");
-        return;
-    }
-    el("studentNameInput").value = "";
-    openModal("nameModalOverlay");
-    el("startExamConfirmBtn").dataset.examId = id;
+    if (btn.dataset.action === "view") openExamDetails(exam);
+    if (btn.dataset.action === "edit") openEditExamModal(exam);
+    if (btn.dataset.action === "delete") askDeleteExam(exam);
 });
 
-el("startExamConfirmBtn").addEventListener("click", () => {
-    const name = el("studentNameInput").value.trim();
-    if (!name) {
-        showMessageModal("يرجى إدخال اسمك.", "error");
-        return;
-    }
-    state.studentName = name;
-    const examId = el("startExamConfirmBtn").dataset.examId;
-    const exam = state.exams.find((ex) => ex.id === examId);
-    if (!exam) return;
-    closeModal("nameModalOverlay");
-    switchToExam(exam);
-});
-
-function renderExam(exam) {
-    const questions = exam.structuredExam?.questions || [];
-    if (questions.length === 0) {
-        examQuestionsContainer.innerHTML = `<div class="empty-state"><p>لا توجد أسئلة في هذا الامتحان.</p></div>`;
-        return;
-    }
-    state.answers = questions.map(() => "");
-    let html = questions.map((q, idx) => `
-        <div class="exam-question">
-            <div class="q-number">السؤال ${idx+1}</div>
-            <div class="q-text">${escapeHtml(q.text)}</div>
-            <textarea rows="3" placeholder="اكتب إجابتك هنا..." data-index="${idx}"></textarea>
+function openExamDetails(exam) {
+    state.detailsExam = exam;
+    const status = getExamStatus(exam);
+    el("detailsExamTitle").textContent = exam.title;
+    el("detailsGrid").innerHTML = `
+        <div class="detail-row status">
+          <span class="label"><span class="material-icons-round">flag</span>الحالة</span>
+          <span class="value ${status}">${statusLabel(status)}</span>
         </div>
-    `).join("");
-    examQuestionsContainer.innerHTML = html;
-    document.querySelectorAll("#examQuestionsContainer textarea").forEach((ta) => {
-        ta.addEventListener("input", (e) => {
-            const idx = parseInt(e.target.dataset.index);
-            state.answers[idx] = e.target.value;
+        <div class="detail-row">
+          <span class="label"><span class="material-icons-round">event</span>تاريخ الإنشاء</span>
+          <span class="value">${formatDate(exam.createdAt)}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label"><span class="material-icons-round">play_circle</span>وقت البداية</span>
+          <span class="value">${formatDateTime(exam.startTime)}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label"><span class="material-icons-round">stop_circle</span>وقت النهاية</span>
+          <span class="value">${formatDateTime(exam.endTime)}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label"><span class="material-icons-round">timer</span>المدة</span>
+          <span class="value">${minutesToLabel(exam.duration)}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label"><span class="material-icons-round">list_alt</span>عدد الأسئلة</span>
+          <span class="value">${exam.structuredExam?.questions?.length ?? "غير متاح"}</span>
+        </div>`;
+    el("revealedExamText").textContent = exam.originalExam || "";
+    el("revealedAnswerKey").textContent = exam.answerKey || "";
+    el("revealedExamText").classList.remove("open");
+    el("revealedAnswerKey").classList.remove("open");
+    el("toggleExamTextBtn").querySelector("span:last-child").textContent = "عرض نص الامتحان";
+    el("toggleAnswerKeyBtn").querySelector("span:last-child").textContent = "عرض نموذج الإجابة";
+
+    if (state.unsubscribeResults) {
+        state.unsubscribeResults();
+        state.unsubscribeResults = null;
+    }
+    const qResults = query(resultsCol, where("examId", "==", exam.id));
+    state.unsubscribeResults = onSnapshot(qResults, (snap) => {
+        let results = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        results.sort((a, b) => {
+            const aTime = a.submittedAt?.toMillis?.() || 0;
+            const bTime = b.submittedAt?.toMillis?.() || 0;
+            return bTime - aTime;
+        });
+        renderResults(results);
+    }, (error) => {
+        console.error("خطأ في جلب النتائج:", error);
+        el("resultsList").innerHTML = `<div class="empty-state" style="padding:20px;"><p>حدث خطأ في تحميل النتائج، يرجى المحاولة مرة أخرى.</p></div>`;
+    });
+
+    openModal("detailsModalOverlay");
+}
+
+function renderResults(results) {
+    const container = el("resultsList");
+    if (results.length === 0) {
+        container.innerHTML = `<div class="empty-state" style="padding:20px;"><p>لا توجد نتائج لهذا الامتحان بعد.</p></div>`;
+        return;
+    }
+    let html = "";
+    results.forEach((result) => {
+        const score = parseFloat(result.score) || 0;
+        const total = 10;
+        const feedback = result.feedback || "";
+        const details = Array.isArray(result.details) ? result.details : [];
+        const studentName = result.studentName || "طالب";
+        let weakness = "";
+        if (feedback) {
+            weakness = feedback;
+        } else if (details.length > 0) {
+            const mistakes = details.filter(d => d.student && d.correct && d.student !== d.correct);
+            if (mistakes.length > 0) {
+                weakness = `أخطاء في ${mistakes.length} سؤال`;
+            }
+        }
+        html += `
+        <div class="result-card">
+            <div class="result-header">
+                <span class="student-name">${escapeHtml(studentName)}</span>
+                <span class="student-score">${score.toFixed(1)} / ${total}</span>
+            </div>
+            <div class="result-details">
+                ${feedback ? `<div>${escapeHtml(feedback)}</div>` : ''}
+                ${weakness ? `<div class="weakness">نقاط الضعف: ${escapeHtml(weakness)}</div>` : ''}
+                <div class="result-toggle" data-result-id="${result.id}">
+                    <span class="material-icons-round" style="font-size:16px;">expand_more</span> عرض التفاصيل
+                </div>
+                <div class="result-full" id="resultFull_${result.id}">
+                    ${details.map((d, idx) => `
+                        <div class="q-item">
+                            <div class="q-text">السؤال ${idx+1}: ${escapeHtml(d.question || '')}</div>
+                            <div><span class="q-correct">الإجابة الصحيحة:</span> ${escapeHtml(d.correct || '')}</div>
+                            <div><span class="${d.student === d.correct ? 'q-correct' : 'q-wrong'}">إجابتك:</span> ${escapeHtml(d.student || '')}</div>
+                            ${d.mistake ? `<div class="q-wrong">الخطأ: ${escapeHtml(d.mistake)}</div>` : ''}
+                            ${d.feedback ? `<div>ملاحظة: ${escapeHtml(d.feedback)}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+
+    container.querySelectorAll(".result-toggle").forEach((toggle) => {
+        toggle.addEventListener("click", () => {
+            const id = toggle.dataset.resultId;
+            const full = document.getElementById(`resultFull_${id}`);
+            if (full) {
+                full.classList.toggle("open");
+                const icon = toggle.querySelector(".material-icons-round");
+                if (full.classList.contains("open")) {
+                    icon.textContent = "expand_less";
+                    toggle.innerHTML = `<span class="material-icons-round" style="font-size:16px;">expand_less</span> إخفاء التفاصيل`;
+                } else {
+                    icon.textContent = "expand_more";
+                    toggle.innerHTML = `<span class="material-icons-round" style="font-size:16px;">expand_more</span> عرض التفاصيل`;
+                }
+            }
         });
     });
-    const durationMinutes = exam.duration || 0;
-    state.totalSeconds = durationMinutes * 60;
-    state.timeRemaining = state.totalSeconds;
-    state.isSubmitted = false;
-    updateTimerDisplay();
-    if (state.timerInterval) clearInterval(state.timerInterval);
-    state.timerInterval = setInterval(() => {
-        state.timeRemaining--;
-        updateTimerDisplay();
-        if (state.timeRemaining <= 300 && state.timeRemaining > 0) {
-            timerDisplay.classList.add("warning");
-            if (state.timeRemaining === 300) {
-                showMessageModal("تبقى 5 دقائق فقط على انتهاء الوقت!", "warning");
-            }
-        } else {
-            timerDisplay.classList.remove("warning");
-        }
-        if (state.timeRemaining <= 0) {
-            clearInterval(state.timerInterval);
-            state.timerInterval = null;
-            timerDisplay.textContent = "00:00";
-            timerDisplay.classList.remove("warning");
-            if (!state.isSubmitted) {
-                showMessageModal("انتهى الوقت! سيتم إرسال الإجابات تلقائياً.", "info");
-                submitExam();
-            }
-        }
-    }, 1000);
 }
 
-function updateTimerDisplay() {
-    const mins = Math.floor(state.timeRemaining / 60);
-    const secs = state.timeRemaining % 60;
-    timerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-}
+el("toggleExamTextBtn").addEventListener("click", () => {
+    const box = el("revealedExamText");
+    const label = el("toggleExamTextBtn").querySelector("span:last-child");
+    box.classList.toggle("open");
+    label.textContent = box.classList.contains("open") ? "إخفاء نص الامتحان" : "عرض نص الامتحان";
+});
+el("toggleAnswerKeyBtn").addEventListener("click", () => {
+    const box = el("revealedAnswerKey");
+    const label = el("toggleAnswerKeyBtn").querySelector("span:last-child");
+    box.classList.toggle("open");
+    label.textContent = box.classList.contains("open") ? "إخفاء نموذج الإجابة" : "عرض نموذج الإجابة";
+});
 
-submitExamBtn.addEventListener("click", () => {
-    if (state.isSubmitted) return;
-    el("confirmText").innerHTML = "هل أنت متأكد من رغبتك في إرسال الإجابات؟ لا يمكن التراجع بعد الإرسال.";
+function askDeleteExam(exam) {
+    el("confirmText").innerHTML = `هل تريد حذف امتحان <strong>${escapeHtml(exam.title)}</strong>؟ لا يمكن التراجع عن هذا الإجراء.`;
+    state.pendingConfirmAction = () => deleteExam(exam.id);
     openModal("confirmModalOverlay");
-    el("confirmActionBtn").onclick = () => {
-        closeModal("confirmModalOverlay");
-        submitExam();
-    };
-});
-
-exitExamBtn.addEventListener("click", () => {
-    if (state.isSubmitted) {
-        switchToSubject(state.currentSubjectId, state.currentSubjectName);
-    } else {
-        el("confirmText").innerHTML = "هل تريد الخروج من الامتحان؟ سيتم فقدان الإجابات.";
-        openModal("confirmModalOverlay");
-        el("confirmActionBtn").onclick = () => {
-            closeModal("confirmModalOverlay");
-            if (state.timerInterval) clearInterval(state.timerInterval);
-            switchToSubject(state.currentSubjectId, state.currentSubjectName);
-        };
-    }
-});
-
-async function submitExam() {
-    if (state.isSubmitted) return;
-    state.isSubmitted = true;
-    if (state.timerInterval) {
-        clearInterval(state.timerInterval);
-        state.timerInterval = null;
-    }
-    submitExamBtn.disabled = true;
-    setLoading(true, "جاري تصحيح الامتحان", "يتم إرسال الإجابات إلى الذكاء الاصطناعي...");
+}
+async function deleteExam(id) {
     try {
-        const exam = state.currentExam;
-        const questions = exam.structuredExam?.questions || [];
-        const answerKey = exam.answerKey || "";
-        const studentAnswers = state.answers;
-
-        const allEmpty = studentAnswers.every(a => !a || a.trim() === "");
-        let result;
-        if (allEmpty) {
-            const total = questions.length || 1;
-            result = {
-                score: 0,
-                perQuestionScores: questions.map(() => 0),
-                feedback: "لم يتم تقديم أي إجابة.",
-                details: questions.map((q, i) => ({
-                    question: i+1,
-                    correct: answerKey ? "نموذج الإجابة متاح" : "—",
-                    student: "—",
-                    mistake: "لم يجب الطالب",
-                    feedback: "لم يتم إدخال إجابة."
-                }))
-            };
-        } else {
-            result = await correctExamWithGemini(questions, answerKey, studentAnswers);
-        }
-
-        // التأكد من وجود الحقول المطلوبة
-        if (!result.details || !Array.isArray(result.details)) {
-            throw new Error("بيانات التصحيح غير مكتملة (details)");
-        }
-        if (!result.perQuestionScores || !Array.isArray(result.perQuestionScores)) {
-            throw new Error("بيانات التصحيح غير مكتملة (perQuestionScores)");
-        }
-        if (typeof result.score !== 'number') {
-            result.score = 0;
-        }
-
-        const resultData = {
-            examId: exam.id,
-            examTitle: exam.title,
-            subjectId: state.currentSubjectId,
-            subjectName: state.currentSubjectName,
-            studentName: state.studentName,
-            answers: studentAnswers,
-            score: result.score,
-            perQuestionScores: result.perQuestionScores,
-            feedback: result.feedback || "",
-            details: result.details,
-            submittedAt: serverTimestamp()
-        };
-        const docRef = await addDoc(resultsCol, resultData);
-        resultData.id = docRef.id;
-        const doneKey = `exam_${exam.id}_done`;
-        localStorage.setItem(doneKey, "true");
-        setLoading(false);
-        switchToResult(resultData);
+        await deleteDoc(doc(db, "exams", id));
+        showToast("تم حذف الامتحان", "success");
     } catch (err) {
-        setLoading(false);
-        showMessageModal("حدث خطأ أثناء التصحيح: " + err.message, "error");
-        submitExamBtn.disabled = false;
-        state.isSubmitted = false;
+        showToast("حدث خطأ أثناء الحذف", "error");
     }
 }
 
-async function correctExamWithGemini(questions, answerKey, studentAnswers) {
-    const prompt = buildCorrectionPrompt(questions, answerKey, studentAnswers);
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-    const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0 }
-        })
-    });
-    if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`فشل الاتصال بـ Gemini (${response.status}): ${errText}`);
+el("confirmActionBtn").addEventListener("click", async () => {
+    const action = state.pendingConfirmAction;
+    closeModal("confirmModalOverlay");
+    if (action) await action();
+    state.pendingConfirmAction = null;
+});
+
+fabBtn.addEventListener("click", () => {
+    if (state.currentSubjectId) {
+        openCreateExamModal();
+    } else {
+        openCreateSubjectModal();
     }
-    const data = await response.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
-    const cleaned = rawText.replace(/```json|```/g, "").trim();
+});
+
+function openCreateSubjectModal() {
+    state.editingSubjectId = null;
+    el("subjectModalTitle").textContent = "مادة جديدة";
+    el("subjectNameInput").value = "";
+    el("subjectNameField").classList.remove("invalid");
+    openModal("subjectModalOverlay");
+    setTimeout(() => el("subjectNameInput").focus(), 200);
+}
+
+function resetExamForm() {
+    el("examTitleInput").value = "";
+    el("examTextInput").value = "";
+    el("answerKeyInput").value = "";
+    el("durationSelect").value = "";
+    el("startTimeInput").value = "";
+    el("endTimeInput").value = "";
+    ["examTitleField", "examTextField", "answerKeyField", "durationField", "startTimeField", "endTimeField"].forEach((id) => el(id).classList.remove("invalid"));
+}
+
+function openCreateExamModal() {
+    state.editingExamId = null;
+    el("examModalTitle").textContent = "إنشاء امتحان";
+    el("saveExamBtnLabel").textContent = "إنشاء الامتحان";
+    resetExamForm();
+    openModal("examModalOverlay");
+}
+
+function toLocalInputValue(isoString) {
+    if (!isoString) return "";
+    const d = new Date(isoString);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function openEditExamModal(exam) {
+    state.editingExamId = exam.id;
+    el("examModalTitle").textContent = "تعديل الامتحان";
+    el("saveExamBtnLabel").textContent = "حفظ التعديلات";
+    el("examTitleInput").value = exam.title || "";
+    el("examTextInput").value = exam.originalExam || "";
+    el("answerKeyInput").value = exam.answerKey || "";
+    el("durationSelect").value = String(exam.duration || "");
+    el("startTimeInput").value = toLocalInputValue(exam.startTime);
+    el("endTimeInput").value = toLocalInputValue(exam.endTime);
+    ["examTitleField", "examTextField", "answerKeyField", "durationField", "startTimeField", "endTimeField"].forEach((id) => el(id).classList.remove("invalid"));
+    openModal("examModalOverlay");
+}
+
+function validateExamForm() {
+    let valid = true;
+    const title = el("examTitleInput").value.trim();
+    const text = el("examTextInput").value.trim();
+    const answerKey = el("answerKeyInput").value.trim();
+    const duration = el("durationSelect").value;
+    const startTime = el("startTimeInput").value;
+    const endTime = el("endTimeInput").value;
+
+    toggleFieldValidity("examTitleField", !!title);
+    toggleFieldValidity("examTextField", !!text);
+    toggleFieldValidity("answerKeyField", !!answerKey);
+    toggleFieldValidity("durationField", !!duration);
+    toggleFieldValidity("startTimeField", !!startTime);
+
+    const endValid = !!endTime && (!startTime || new Date(endTime) > new Date(startTime));
+    toggleFieldValidity("endTimeField", endValid);
+
+    valid = !!title && !!text && !!answerKey && !!duration && !!startTime && endValid;
+    return valid;
+}
+
+function toggleFieldValidity(fieldId, isValid) {
+    el(fieldId).classList.toggle("invalid", !isValid);
+}
+
+el("saveExamBtn").addEventListener("click", async () => {
+    if (!validateExamForm()) return;
+
+    const title = el("examTitleInput").value.trim();
+    const originalExam = el("examTextInput").value;
+    const answerKey = el("answerKeyInput").value;
+    const duration = Number(el("durationSelect").value);
+    const startTime = new Date(el("startTimeInput").value).toISOString();
+    const endTime = new Date(el("endTimeInput").value).toISOString();
+
+    const btn = el("saveExamBtn");
+    btn.disabled = true;
+    closeModal("examModalOverlay");
+    setLoading(true, "جاري تنظيم الامتحان", "يتم التحقق من البيانات وإرسالها للمعالجة");
+
     try {
+        const structuredExam = await organizeExamWithGemini(originalExam, answerKey);
+        const payload = {
+            subjectId: state.currentSubjectId,
+            title,
+            originalExam,
+            answerKey,
+            structuredExam,
+            duration,
+            startTime,
+            endTime,
+            updatedAt: serverTimestamp()
+        };
+        if (state.editingExamId) {
+            await updateDoc(doc(db, "exams", state.editingExamId), payload);
+            showToast("تم تحديث الامتحان", "success");
+        } else {
+            payload.createdAt = serverTimestamp();
+            await addDoc(examsCol, payload);
+            showToast("تم إنشاء الامتحان بنجاح", "success");
+        }
+    } catch (err) {
+        showToast("حدث خطأ أثناء إنشاء الامتحان", "error");
+    } finally {
+        setLoading(false);
+        btn.disabled = false;
+    }
+});
+
+async function organizeExamWithGemini(examText, answerKeyText) {
+    const prompt = buildGeminiPrompt(examText, answerKeyText);
+    try {
+        const response = await fetch(GEMINI_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0, responseMimeType: "application/json" }
+            })
+        });
+        if (!response.ok) throw new Error("gemini_request_failed");
+        const data = await response.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
+        const cleaned = rawText.replace(/```json|```/g, "").trim();
         const parsed = JSON.parse(cleaned);
+        if (!parsed || !Array.isArray(parsed.questions)) throw new Error("invalid_structure");
         return parsed;
-    } catch (e) {
-        throw new Error("خطأ في تحليل استجابة Gemini: " + cleaned);
+    } catch (err) {
+        return { questions: [], note: "لم يتم التنظيم تلقائيًا، النص الأصلي محفوظ بالكامل" };
     }
 }
 
-function buildCorrectionPrompt(questions, answerKey, studentAnswers) {
-    const qText = questions.map((q, i) => `السؤال ${i+1}: ${q.text}`).join("\n");
-    const ansText = studentAnswers.map((a, i) => `إجابة الطالب للسؤال ${i+1}: ${a || "(لم يجب)"}`).join("\n");
-    return `أنت مصحح امتحانات. بناءً على نموذج الإجابة التالي، قم بتصحيح إجابات الطالب وأعد النتيجة بصيغة JSON فقط بدون أي نص إضافي.
-نموذج الإجابة:
+function buildGeminiPrompt(examText, answerKeyText) {
+    return `أنت أداة تنظيم بيانات فقط، ولست مسؤولًا عن أي تصحيح أو تعديل أو إعادة صياغة.
+مهمتك الوحيدة: تحويل نص الامتحان التالي إلى تقسيم منظم إلى أسئلة، مع الحفاظ الكامل والحرفي على النص الأصلي بدون أي تغيير في حرف أو كلمة أو علامة ترقيم أو ترتيب.
+ممنوع تصحيح الأخطاء، ممنوع الحذف، ممنوع الإضافة، ممنوع إعادة الصياغة.
+إذا كان النص منظمًا بالفعل، أعد تقسيمه فقط كما هو.
+أعد الناتج بصيغة JSON فقط بدون أي نص إضافي وبدون Markdown، بالشكل التالي بالضبط:
+{"questions":[{"number":1,"text":"نص السؤال الحرفي هنا"}]}
+نص الامتحان:
 """
-${answerKey}
+${examText}
 """
-أسئلة الامتحان:
+نموذج الإجابة (للاطلاع فقط دون دمجه في نص السؤال):
 """
-${qText}
-"""
-إجابات الطالب:
-"""
-${ansText}
-"""
-أخرج JSON بالشكل التالي:
-{
-  "score": 7.5,
-  "perQuestionScores": [1.5, 2, 0, 2, 2],
-  "feedback": "ملاحظات مختصرة عن أداء الطالب",
-  "details": [
-    {"question": 1, "correct": "الإجابة الصحيحة للسؤال 1", "student": "إجابة الطالب", "mistake": "الخطأ إن وجد", "feedback": "ملاحظة خاصة"}
-  ]
-}
-ملاحظة: الدرجة النهائية من 10 (أو حسب عدد الأسئلة، اجعل المجموع الكلي 10 درجات موزعة بالتساوي بين الأسئلة).`;
-}
-
-function renderResult(result) {
-    const content = el("resultContent");
-    if (!result || typeof result !== 'object') {
-        content.innerHTML = `<div class="empty-state"><p>حدث خطأ في عرض النتيجة، البيانات غير صالحة.</p></div>`;
-        return;
-    }
-    const totalQuestions = result.details?.length || 0;
-    let detailsHtml = "";
-    if (result.details && Array.isArray(result.details)) {
-        detailsHtml = result.details.map((d, i) => {
-            const perScore = (result.perQuestionScores && result.perQuestionScores[i] !== undefined) ? result.perQuestionScores[i] : 0;
-            return `
-            <div class="result-item">
-                <div class="q-header">
-                    <span>السؤال ${i+1}</span>
-                    <span class="q-score">${perScore.toFixed(1)} / ${(totalQuestions > 0 ? (10/totalQuestions).toFixed(1) : "0")}</span>
-                </div>
-                <div class="q-details">
-                    <div><span class="correct">الإجابة الصحيحة:</span> ${escapeHtml(d.correct || "—")}</div>
-                    <div><span class="${d.student === d.correct ? 'correct' : 'wrong'}">إجابتك:</span> ${escapeHtml(d.student || "—")}</div>
-                    ${d.mistake ? `<div class="wrong">الخطأ: ${escapeHtml(d.mistake)}</div>` : ''}
-                    ${d.feedback ? `<div class="feedback">ملاحظة: ${escapeHtml(d.feedback)}</div>` : ''}
-                </div>
-            </div>`;
-        }).join("");
-    }
-    const score = typeof result.score === 'number' ? result.score : 0;
-    const total = totalQuestions > 0 ? (10).toFixed(1) : "0";
-    content.innerHTML = `
-        <div class="final-score">
-            <div class="score-number">${score.toFixed(1)} / ${total}</div>
-            <div class="score-label">الدرجة النهائية</div>
-            ${result.feedback ? `<div style="margin-top:12px;font-weight:600;color:var(--primary);">${escapeHtml(result.feedback)}</div>` : ''}
-        </div>
-        ${detailsHtml}
-    `;
+${answerKeyText}
+"""`;
 }
 
 listenSubjects();
+listenExams(null);
 switchToHome();
 </script>
 </body>
