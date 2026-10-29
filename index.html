@@ -321,11 +321,13 @@ async function supabaseUploadVoice(path, blob, contentType) {
   return supabaseObjectUrl(path);
 }
 async function supabaseDeleteVoice(path) {
-  // Supabase Storage removes objects through POST /object/{bucket} with prefixes.
+  // Supabase Storage remove API requires DELETE /object/{bucket} with a prefixes array.
+  const objectPath = String(path || "").replace(/^\/+/, "");
+  if (!objectPath || objectPath.includes("..")) throw new Error("Supabase voice delete failed: invalid object path");
   const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}`, {
-    method: "POST",
+    method: "DELETE",
     headers: { "apikey": SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify({ prefixes: [String(path)] })
+    body: JSON.stringify({ prefixes: [objectPath] })
   });
   if (!response.ok) { const detail = await response.text().catch(() => ""); throw new Error(`Supabase voice delete failed (${response.status}): ${detail}`); }
 }
@@ -1080,14 +1082,13 @@ function forumSubscribe(){
     snap.docChanges().forEach(change=>{
       const d=change.doc,data=d.data();
       if(change.type==="removed"){
-        getDoc(d.ref).then(check=>{
-          if(!check.exists()){
-            forumMessagesMap.delete(d.id);
-            forumStopReactionListener(d.id);
-            forumStopSeenListener(d.id);
-            forumRender();
-          }
-        }).catch(err=>console.error("Forum deleted-message check:",err));
+        // The document has left the live query. Remove it from the local cache immediately;
+        // checking getDoc() here can read a stale cached document and keep deleted messages visible.
+        forumMessagesMap.delete(d.id);
+        forumStopReactionListener(d.id);
+        forumStopSeenListener(d.id);
+        forumReactionMap.delete(d.id);
+        forumRender();
       }else{
         forumMessagesMap.set(d.id,{...data,id:d.id});
         forumStartReactionListener(d.id);
@@ -1183,6 +1184,12 @@ function forumConfirmDelete(messageId){
       }
       // Permanently remove the message document from Firestore (not a soft-delete).
       await deleteDoc(doc(db,"forumMessages",messageId));
+      // Optimistically clear local chat state after Firestore confirms deletion.
+      forumMessagesMap.delete(messageId);
+      forumStopReactionListener(messageId);
+      forumStopSeenListener(messageId);
+      forumReactionMap.delete(messageId);
+      forumRender();
       modal.classList.remove("open");
       forumToast("تم حذف الرسالة لدى الجميع.");
     }catch(e){
