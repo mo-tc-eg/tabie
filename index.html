@@ -294,7 +294,7 @@ body.forum-open{overflow:hidden}body.forum-open .app{width:100%;max-width:none;m
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import { getFirestore, collection, collectionGroup, doc, getDoc, getDocs, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, startAfter, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
 
 const firebaseConfig = { apiKey: "AIzaSyCSG6BPDaD-jrPYlUAHkOFfSnYKW0AmkuE", authDomain: "tabie-eff44.firebaseapp.com", projectId: "tabie-eff44", storageBucket: "tabie-eff44.firebasestorage.app", messagingSenderId: "356449051334", appId: "1:356449051334:web:0373245426e3b4cb3e6dc7" };
 const firebaseApp = initializeApp(firebaseConfig);
@@ -1303,37 +1303,18 @@ async function forumSendVoiceMessage(){
   sendBtn.disabled=true;
   redoBtn.disabled=true;
   sendBtn.innerHTML='<span class="material-symbols-rounded">hourglass_top</span>';
-  const status=forum$("forumStatus");
-  status.textContent="جاري تجهيز الرسالة الصوتية...";
+  forum$("forumStatus").textContent="جاري رفع الرسالة الصوتية...";
   let uploaded=false;
   let sref=null;
-  let uploadTask=null;
-  let stage="تسجيل الدخول";
-  const withTimeout=(promise,ms,label)=>Promise.race([
-    promise,
-    new Promise((_,reject)=>setTimeout(()=>reject(Object.assign(new Error(label+" استغرق وقتًا طويلًا"),{code:"app/timeout",stage:label})),ms))
-  ]);
   try{
-    stage="تسجيل الدخول";
-    const user=await withTimeout(forumAuthReady,12000,"تسجيل الدخول إلى المنتدى");
-    if(!user)throw Object.assign(new Error("لم يتم تسجيل الدخول"),{code:"auth/unauthenticated"});
+    const user=await forumAuthReady;
     const messageId="audio_"+user.uid+"_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
     const ext=forumGetAudioExt(forumRecordedMime);
     const path="forumAudio/"+user.uid+"/"+messageId+"."+ext;
     sref=storageRef(storage,path);
-    stage="رفع الملف الصوتي";
-    status.textContent="جاري رفع الصوت... 0%";
-    await withTimeout(new Promise((resolve,reject)=>{
-      uploadTask=uploadBytesResumable(sref,forumRecordedBlob,{contentType:forumRecordedMime||forumRecordedBlob.type||"audio/webm"});
-      uploadTask.on("state_changed",snapshot=>{
-        const percent=snapshot.totalBytes?Math.round(snapshot.bytesTransferred/snapshot.totalBytes*100):0;
-        status.textContent="جاري رفع الصوت... "+percent+"%";
-      },reject,()=>resolve(uploadTask.snapshot));
-    }),45000,"رفع الملف الصوتي");
+    await uploadBytes(sref,forumRecordedBlob,{contentType:forumRecordedMime||"audio/webm"});
     uploaded=true;
-    stage="الحصول على رابط الصوت";
-    status.textContent="اكتمل الرفع، جاري حفظ الرسالة...";
-    const url=await withTimeout(getDownloadURL(sref),12000,"تجهيز رابط الصوت");
+    const url=await getDownloadURL(sref);
     const payload={
       text:"",
       senderId:user.uid,
@@ -1345,50 +1326,41 @@ async function forumSendVoiceMessage(){
       audioUrl:url,
       audioPath:path,
       audioDuration:forumRecordedDuration,
-      audioMimeType:forumRecordedMime||forumRecordedBlob.type||"audio/webm",
+      audioMimeType:forumRecordedMime||"audio/webm",
       audioSize:forumRecordedBlob.size
     };
-    stage="حفظ الرسالة في قاعدة البيانات";
-    status.textContent="تم رفع الصوت، جاري تسجيله في المحادثة...";
-    await withTimeout(addDoc(collection(db,"forumMessages"),payload),20000,"حفظ الرسالة في قاعدة البيانات");
+    await addDoc(collection(db,"forumMessages"),payload);
     forumRecordedBlob=null;
     forumRecordedDuration=0;
     forumResetVoiceUI();
     forumClearReply();
     forumPlaySendSound();
-    status.textContent="تم إرسال الرسالة الصوتية.";
+    forum$("forumStatus").textContent="تم إرسال الرسالة الصوتية.";
     forumScrollBottom(true);
   }catch(e){
-    console.error("Voice upload/send failed at stage:",stage,e);
-    if(uploadTask && uploadTask.snapshot && uploadTask.snapshot.state==="running"){
-      try{uploadTask.cancel();}catch(cancelError){console.warn("Could not cancel stalled voice upload",cancelError);}
-    }
+    console.error("Voice upload/send failed",e);
+    let msg="تعذر إرسال الرسالة الصوتية. اتأكد من الإنترنت وجرب تاني.";
     const code=String(e?.code||"");
     const detail=String(e?.message||"").toLowerCase();
-    let msg="فشل الإرسال أثناء "+stage+". جرّب تاني.";
-    if(code==="app/timeout"){
-      msg="الإرسال وقف عند مرحلة: "+stage+". غالبًا الاتصال بخدمة Firebase أو إعداداتها معطّل؛ راجع الإنترنت ثم جرّب مرة أخرى.";
-    }else if(code==="storage/unauthorized"||code==="storage/unauthenticated"){
-      msg="Firebase Storage رفض رفع الصوت بسبب صلاحيات التخزين أو تسجيل الدخول. لازم مراجعة قواعد Storage.";
+    if(code==="storage/unauthorized"||code==="storage/unauthenticated"){
+      msg="Firebase Storage رفض رفع الصوت بسبب تسجيل الدخول أو صلاحيات التخزين. راجع قواعد Storage.";
     }else if(code==="permission-denied"||code==="firestore/permission-denied"){
       msg="قواعد Firestore منعت حفظ الرسالة الصوتية. راجع صلاحيات forumMessages.";
     }else if(code==="storage/canceled"){
-      msg="تم إلغاء رفع الصوت. جرّب الإرسال مرة تانية.";
+      msg="تم إلغاء رفع الرسالة الصوتية. جرب الإرسال مرة تانية.";
     }else if(code==="storage/retry-limit-exceeded"||code==="storage/network-request-failed"||!navigator.onLine){
-      msg="الاتصال بخدمة التخزين فشل أثناء رفع الصوت. اتأكد من الإنترنت وإعدادات Firebase Storage.";
+      msg="فشل رفع الصوت بسبب الاتصال. اتأكد من الإنترنت وجرب تاني.";
     }else if(code==="auth/unauthorized-domain"){
       msg="الدومين الحالي غير مسموح به في Firebase Authentication.";
     }else if(code.startsWith("auth/")){
       msg="تعذر تسجيل الدخول لإرسال الصوت. راجع إعدادات Firebase Authentication.";
     }else if(detail.includes("quota")||code==="storage/quota-exceeded"){
-      msg="حصة Firebase Storage غير كافية لرفع الصوت.";
-    }else if(code==="app/timeout"){
-      msg="انتهت مهلة الإرسال عند مرحلة: "+stage+". الرسالة لم تُؤكد كمرسلة؛ افحص الاتصال وحاول مجددًا.";
+      msg="مساحة أو حصة Firebase Storage غير كافية لرفع الصوت.";
     }
     forumToast(msg);
-    status.textContent="فشل الإرسال عند مرحلة: "+stage+". جرّب مرة أخرى.";
-    if(uploaded&&sref&&stage!=="حفظ الرسالة في قاعدة البيانات"){
-      try{await deleteObject(sref);}catch(err){console.warn("Orphan cleanup failed",err);}
+    forum$("forumStatus").textContent="فشل الإرسال، جرّب تاني.";
+    if(uploaded&&sref){
+      try{ await deleteObject(sref); }catch(err){ console.warn("Orphan cleanup failed",err); }
     }
   }finally{
     forumUploading=false;
