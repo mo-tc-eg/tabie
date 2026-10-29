@@ -1,0 +1,26 @@
+{
+  "name": "تابع",
+  "short_name": "تابع",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#d7cbbb",
+  "theme_color": "#f4efe7",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "https://png.pngtree.com/png-clipart/20240310/original/pngtree-isolated-open-book-sticker-png-image_14553639.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://png.pngtree.com/png-clipart/20240310/original/pngtree-isolated-open-book-sticker-png-image_14553639.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
