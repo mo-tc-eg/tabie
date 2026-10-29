@@ -272,25 +272,46 @@ async function playNotificationSound() {
       return;
     } catch (e) {}
   }
-}
-async function registerPushNotifications() {
+}async function registerPushNotifications() {
+  const log = [];
+  const add = (s) => log.push(s);
   try {
+    add("Notification: " + ("Notification" in window));
+    add("ServiceWorker: " + ("serviceWorker" in navigator));
+    add("Standalone mode: " + window.matchMedia("(display-mode: standalone)").matches);
+    add("iOS standalone flag: " + window.navigator.standalone);
+    add("iOS version: " + (navigator.userAgent.match(/OS (\d+)_/) || [])[1]);
+    add("Permission: " + (window.Notification ? Notification.permission : "N/A"));
+    alert("خطوة 1:\n" + log.join("\n"));
+
     const permission = await Notification.requestPermission();
+    add("→ بعد الطلب: " + permission);
+    alert("خطوة 2:\n" + log.join("\n"));
     if (permission !== "granted") return;
+
+    const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+    add("SW register: OK");
+    await navigator.serviceWorker.ready;
+    add("SW ready: OK");
+    alert("خطوة 3:\n" + log.join("\n"));
+
     const token = await getToken(messaging, {
-      vapidKey: "BO0d0ziKQgmg1Tyjl6gje3RzfcjGO4CWRFYJsGe1aNgQ6-qrTpNEcq1jwmcw9iyrY6ouxrIiiHtLrjIuCoUcDkI"
+      vapidKey: "BO0d0ziKQgmg1Tyjl6gje3RzfcjGO4CWRFYJsGe1aNgQ6-qrTpNEcq1jwmcw9iyrY6ouxrIiiHtLrjIuCoUcDkI",
+      serviceWorkerRegistration: registration
     });
+    add("Token: " + (token ? token.slice(0, 25) + "..." : "NULL"));
+    alert("خطوة 4:\n" + log.join("\n"));
+
     if (!token) return;
     const user = await forumAuthReady;
     await setDoc(doc(db, "fcmTokens", user.uid), {
-      token: token,
-      displayName: forumDisplayName || "",
-      updatedAt: serverTimestamp()
+      token, displayName: forumDisplayName || "", updatedAt: serverTimestamp()
     }, { merge: true });
-    if (typeof forumToast === "function") forumToast("تم تفعيل الإشعارات");
+    alert("✅ تم التفويض بنجاح");
   } catch (e) {
-    console.error("Push registration failed:", e);
-    if (typeof forumToast === "function") forumToast("مش قادرين نفعّل الإشعارات دلوقتي");
+    add("❌ ERROR: " + e.message);
+    add("Code: " + (e.code || "—"));
+    alert("خطأ:\n" + log.join("\n"));
   }
 }
 onMessage(messaging, () => {
