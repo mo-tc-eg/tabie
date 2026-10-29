@@ -206,6 +206,7 @@ body.forum-open{overflow:hidden}body.forum-open .app{width:100%;max-width:none;m
         <button class="forum-tool" id="forumNameBtn" aria-label="غيّر اسمك" title="اسمك"><span class="material-symbols-rounded">person</span></button>
         <button class="forum-tool" id="forumSearchBtn" aria-label="دور في الرسايل" title="بحث"><span class="material-symbols-rounded">search</span></button>
         <button class="forum-tool" id="forumSettingsBtn" aria-label="غيّر الخلفية" title="الخلفية"><span class="material-symbols-rounded">palette</span></button>
+        <button class="forum-tool" id="enablePushBtn" aria-label="تفعيل الإشعارات" title="تفعيل الإشعارات"><span class="material-symbols-rounded">notifications_active</span></button>
       </div>
     </header>
     <div class="forum-search" id="forumSearchBar"><input id="forumSearchInput" type="search" placeholder="دور في الرسايل..." aria-label="دور في الرسايل المحمّلة"></div>
@@ -236,12 +237,65 @@ body.forum-open{overflow:hidden}body.forum-open .app{width:100%;max-width:none;m
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import { getFirestore, collection, collectionGroup, doc, getDoc, getDocs, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, startAfter, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js";
 
 const firebaseConfig = { apiKey: "AIzaSyCSG6BPDaD-jrPYlUAHkOFfSnYKW0AmkuE", authDomain: "tabie-eff44.firebaseapp.com", projectId: "tabie-eff44", storageBucket: "tabie-eff44.firebasestorage.app", messagingSenderId: "356449051334", appId: "1:356449051334:web:0373245426e3b4cb3e6dc7" };
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const auth = getAuth(firebaseApp);
 const forumAuthReady = signInAnonymously(auth).then(cred=>cred.user).catch(error=>{console.error("Forum anonymous authentication failed:",error);throw error});
+
+const messaging = getMessaging(firebaseApp);
+const NOTIFICATION_SOUND_URLS = ["/new-notification.mp3", "https://actions.google.com/sounds/v1/alarms/beep_short.ogg"];
+let notifAudioUnlocked = false;
+let lastNotificationSoundAt = 0;
+function unlockNotificationAudio() {
+  if (notifAudioUnlocked) return;
+  notifAudioUnlocked = true;
+  try {
+    const audio = new Audio(NOTIFICATION_SOUND_URLS[0]);
+    audio.volume = 0;
+    audio.play().catch(() => {});
+  } catch (e) {}
+}
+document.addEventListener("click", unlockNotificationAudio, { once: true, passive: true });
+document.addEventListener("touchstart", unlockNotificationAudio, { once: true, passive: true });
+async function playNotificationSound() {
+  const now = Date.now();
+  if (now - lastNotificationSoundAt < 1500) return;
+  lastNotificationSoundAt = now;
+  for (const url of NOTIFICATION_SOUND_URLS) {
+    try {
+      const audio = new Audio(url);
+      audio.volume = 0.7;
+      await audio.play();
+      return;
+    } catch (e) {}
+  }
+}
+async function registerPushNotifications() {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return;
+    const token = await getToken(messaging, {
+      vapidKey: "BO0d0ziKQgmg1Tyjl6gje3RzfcjGO4CWRFYJsGe1aNgQ6-qrTpNEcq1jwmcw9iyrY6ouxrIiiHtLrjIuCoUcDkI"
+    });
+    if (!token) return;
+    const user = await forumAuthReady;
+    await setDoc(doc(db, "fcmTokens", user.uid), {
+      token: token,
+      displayName: forumDisplayName || "",
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    if (typeof forumToast === "function") forumToast("تم تفعيل الإشعارات");
+  } catch (e) {
+    console.error("Push registration failed:", e);
+    if (typeof forumToast === "function") forumToast("مش قادرين نفعّل الإشعارات دلوقتي");
+  }
+}
+onMessage(messaging, () => {
+  playNotificationSound();
+});
 
 const initialSubjects=[
 {id:"arabic",name:"اللغة العربية",icon:"translate",tone:"#9a8062",accent:"#e7d8c5",accent2:"#f3e9dc",units:[
@@ -873,6 +927,7 @@ async function forumChangeName(){openPrompt("اسمك إيه؟","اكتب اسم
 async function forumLoadHidden(){forumHiddenIds.clear();const q=query(collection(db,"forumUserDeletions"),where("userId","==",forumCurrentUser.uid));const snap=await getDocs(q);snap.forEach(d=>forumHiddenIds.add(d.data().messageId))}
 function forumSubscribe(){
   if(forumUnsubscribe)forumUnsubscribe();
+  let forumFirstSnapshot=true;
   const q=query(collection(db,"forumMessages"),orderBy("createdAt","desc"),limit(FORUM_PAGE_SIZE));
   forumUnsubscribe=onSnapshot(q,snap=>{
     const wasBottom=forumAtLatest();
@@ -891,6 +946,7 @@ function forumSubscribe(){
         forumMessagesMap.set(d.id,{...data,id:d.id});
         forumStartReactionListener(d.id);
         if(data.senderId===forumCurrentUser?.uid){forumStartSeenListener(d.id)}
+        if(!forumFirstSnapshot&&change.type==="added"&&forumCurrentUser&&data.senderId!==forumCurrentUser.uid&&!data.deletedAt){playNotificationSound()}
       }
     });
     if(snap.docs.length){
@@ -898,6 +954,7 @@ function forumSubscribe(){
       if(snap.docs.length<FORUM_PAGE_SIZE)forumHasMore=false;
     }
     forumLoadedInitial=true;
+    forumFirstSnapshot=false;
     forumSetConnection(true,"متصل");
     forum$("forumStatus").textContent="";
     forumRender();
@@ -971,6 +1028,7 @@ function forumInitControls(){
   forum$("forumMessageInput").addEventListener("blur",()=>{forumSetTyping(false)});
   forum$("forumReplyCancel").onclick=forumClearReply;
   forum$("forumNameBtn").onclick=forumChangeName;
+  forum$("enablePushBtn").onclick=registerPushNotifications;
   forum$("forumSearchBtn").onclick=()=>{forum$("forumSearchBar").classList.toggle("open");forum$("forumSearchInput").focus();forum$("forumSettingsMenu").classList.remove("open")};
   forum$("forumSearchInput").addEventListener("input",forumRender);
   forum$("forumSettingsBtn").onclick=()=>{forumOpenSettings();forum$("forumSearchBar").classList.remove("open")};
