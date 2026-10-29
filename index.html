@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f4efe7">
 <script src="https://js.puter.com/v2/"></script>
-<link rel="manifest" href="/manifest.json">
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -169,6 +169,11 @@ body.forum-open{overflow:hidden}body.forum-open .app{width:100%;max-width:none;m
 .forum-row.mine .forum-audio-fill{background:linear-gradient(90deg,#5d4b39,#6e5a45)}
 .forum-audio-time{font-variant-numeric:tabular-nums;font-size:12px;font-weight:800;color:#6c5d4c;min-width:40px;text-align:left;direction:ltr}
 .forum-row.mine .forum-audio-time{color:#4b3f32}
+.forum-audio-speed{height:32px;max-width:66px;flex:none;border:1px solid #d9cbb8;border-radius:9px;background:#fffdf9;color:#6c5d4c;font-size:12px;font-weight:800;padding:0 4px;direction:ltr}
+.forum-audio-share{height:32px;width:34px;flex:none;border:1px solid #d9cbb8;border-radius:9px;background:#fffdf9;color:#6c5d4c;display:grid;place-items:center;padding:0}
+.forum-audio-share:hover,.forum-audio-speed:hover{background:#f0e6d9}
+.forum-audio-share .material-symbols-rounded{font-size:19px}
+@media(max-width:420px){.forum-audio{gap:6px;min-width:0}.forum-audio-play{width:36px;height:36px}.forum-audio-speed{max-width:58px}}
 </style>
 </head>
 <body>
@@ -294,16 +299,39 @@ body.forum-open{overflow:hidden}body.forum-open .app{width:100%;max-width:none;m
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import { getFirestore, collection, collectionGroup, doc, getDoc, getDocs, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, startAfter, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
 
 const firebaseConfig = { apiKey: "AIzaSyCSG6BPDaD-jrPYlUAHkOFfSnYKW0AmkuE", authDomain: "tabie-eff44.firebaseapp.com", projectId: "tabie-eff44", storageBucket: "tabie-eff44.firebasestorage.app", messagingSenderId: "356449051334", appId: "1:356449051334:web:0373245426e3b4cb3e6dc7" };
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 const auth = getAuth(firebaseApp);
-const storage = getStorage(firebaseApp);
+
+// Voice messages use Supabase Storage; Firestore/Auth remain on Firebase.
+const SUPABASE_URL = "https://eljmeemgpvoztecpbyqr.supabase.co";
+const SUPABASE_BUCKET = "voice-messages";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_U7LZDYeHm6DSIrpsxMiZRg_MwYU8aTu";
+function supabaseEncodedPath(path) { return String(path).split("/").map(encodeURIComponent).join("/"); }
+function supabaseObjectUrl(path) { return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${supabaseEncodedPath(path)}`; }
+async function supabaseUploadVoice(path, blob, contentType) {
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${supabaseEncodedPath(path)}`, {
+    method: "POST",
+    headers: { "apikey": SUPABASE_PUBLISHABLE_KEY, "Content-Type": contentType || "audio/webm", "x-upsert": "false" },
+    body: blob
+  });
+  if (!response.ok) { const detail = await response.text().catch(() => ""); throw new Error(`Supabase voice upload failed (${response.status}): ${detail}`); }
+  return supabaseObjectUrl(path);
+}
+async function supabaseDeleteVoice(path) {
+  // Supabase Storage removes objects through POST /object/{bucket} with prefixes.
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}`, {
+    method: "POST",
+    headers: { "apikey": SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ prefixes: [String(path)] })
+  });
+  if (!response.ok) { const detail = await response.text().catch(() => ""); throw new Error(`Supabase voice delete failed (${response.status}): ${detail}`); }
+}
 const forumAuthReady = signInAnonymously(auth).then(cred=>cred.user).catch(error=>{console.error("Forum anonymous authentication failed:",error);throw error});
 
-const NOTIFICATION_SOUND_URLS = ["/new-notification.mp3", "https://actions.google.com/sounds/v1/alarms/beep_short.ogg"];
+const NOTIFICATION_SOUND_URLS = ["https://actions.google.com/sounds/v1/alarms/beep_short.ogg"];
 let notifAudioUnlocked = false;
 let lastNotificationSoundAt = 0;
 function unlockNotificationAudio() {
@@ -731,6 +759,31 @@ let forumRecordedDuration = 0;
 let forumRecordedMime = "";
 let forumUploading = false;
 const forumAudioState = { el: new Audio(), currentId: null, currentBtn: null, currentFill: null, currentTime: null, loading: false };
+const forumAudioSpeeds = new Map();
+async function forumShareAudio(messageId){
+  const m=forumMessagesMap.get(messageId);
+  if(!m?.audioUrl){forumToast("الصوت مش متاح للمشاركة دلوقتي.");return;}
+  const shareText=`رسالة صوتية من ${m.senderName||"تابع"}`;
+  const waUrl=`https://wa.me/?text=${encodeURIComponent(`${shareText}: ${m.audioUrl}`)}`;
+  // On browsers/devices that support sharing files, try sharing the actual audio file first.
+  if(navigator.share&&navigator.canShare){
+    try{
+      const response=await fetch(m.audioUrl);
+      if(!response.ok)throw new Error("تعذر تحميل الملف الصوتي");
+      const blob=await response.blob();
+      const ext=(blob.type||"").includes("mp4")?"m4a":((blob.type||"").includes("ogg")?"ogg":"webm");
+      const file=new File([blob],`تابع-رسالة-صوتية.${ext}`,{type:blob.type||"audio/webm"});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:"رسالة صوتية من تابع",text:shareText});
+        return;
+      }
+    }catch(err){
+      if(err?.name==="AbortError")return;
+      console.warn("Direct audio file share unavailable; falling back to WhatsApp link.",err);
+    }
+  }
+  window.open(waUrl,"_blank","noopener,noreferrer");
+}
 
 const forum$=id=>document.getElementById(id);
 function forumToast(message){const el=forum$("forumToast");if(!el)return;el.textContent=message;el.classList.add("show");clearTimeout(forumToast.timer);forumToast.timer=setTimeout(()=>el.classList.remove("show"),2400)}
@@ -903,7 +956,7 @@ function forumRender(){
     let bodyHtml;
     if(m.messageType==="audio" && m.audioUrl){
       const dur=forumFormatAudioTime(m.audioDuration||0);
-      bodyHtml=`<div class="forum-audio" data-audio-id="${escapeHtml(m.id)}"><button type="button" class="forum-audio-play" data-audio-toggle="${escapeHtml(m.id)}" aria-label="تشغيل"><span class="material-symbols-rounded">play_arrow</span></button><div class="forum-audio-track" data-audio-track="${escapeHtml(m.id)}"><div class="forum-audio-fill"></div></div><span class="forum-audio-time">${dur}</span></div>`;
+      bodyHtml=`<div class="forum-audio" data-audio-id="${escapeHtml(m.id)}"><button type="button" class="forum-audio-play" data-audio-toggle="${escapeHtml(m.id)}" aria-label="تشغيل"><span class="material-symbols-rounded">play_arrow</span></button><div class="forum-audio-track" data-audio-track="${escapeHtml(m.id)}" role="slider" aria-label="تقديم الصوت"><div class="forum-audio-fill"></div></div><span class="forum-audio-time">${dur}</span><select class="forum-audio-speed" data-audio-speed="${escapeHtml(m.id)}" aria-label="سرعة تشغيل الرسالة الصوتية" title="سرعة التشغيل"><option value="1">1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="1.75">1.75x</option><option value="2">2x</option></select><button type="button" class="forum-audio-share" data-audio-share="${escapeHtml(m.id)}" aria-label="مشاركة الصوت على واتساب" title="مشاركة على واتساب"><span class="material-symbols-rounded">share</span></button></div>`;
     } else {
       bodyHtml=`<div class="forum-text">${forumSafeLinkify(m.text||"")}</div>`;
     }
@@ -931,6 +984,21 @@ function forumRender(){
   box.querySelectorAll("[data-audio-toggle]").forEach(b=>{
     b.addEventListener("click",e=>{e.stopPropagation();forumToggleAudio(b.dataset.audioToggle)});
   });
+  box.querySelectorAll("[data-audio-speed]").forEach(select=>{
+    select.addEventListener("click",e=>e.stopPropagation());
+    select.addEventListener("change",e=>{
+      e.stopPropagation();
+      const rate=Number(select.value)||1;
+      // Apply the selected speed immediately if this message is loaded, and remember it for this message.
+      forumAudioSpeeds.set(select.dataset.audioSpeed,rate);
+      if(forumAudioState.currentId===select.dataset.audioSpeed)forumAudioState.el.playbackRate=rate;
+    });
+    const saved=forumAudioSpeeds.get(select.dataset.audioSpeed)||1;
+    select.value=String(saved);
+  });
+  box.querySelectorAll("[data-audio-share]").forEach(b=>{
+    b.addEventListener("click",e=>{e.stopPropagation();forumShareAudio(b.dataset.audioShare)});
+  });
   box.querySelectorAll("[data-audio-track]").forEach(track=>{
     track.addEventListener("click",e=>{
       e.stopPropagation();
@@ -942,6 +1010,7 @@ function forumRender(){
         forumAudioState.el.pause();
         forumAudioState.currentId=id;
         forumAudioState.el.src=m.audioUrl;
+        forumAudioState.el.playbackRate=forumAudioSpeeds.get(id)||1;
       }
       const rect=track.getBoundingClientRect();
       const pct=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
@@ -1106,16 +1175,22 @@ function forumConfirmDelete(messageId){
       await Promise.all(reactions.docs.map(d=>deleteDoc(d.ref)));
       const seen=await getDocs(collection(db,"forumMessages",messageId,"seen"));
       await Promise.all(seen.docs.map(d=>deleteDoc(d.ref)));
+      // For audio messages, remove the actual object from Supabase Storage first.
+      // If Storage rejects deletion, keep the Firestore message so the user can retry;
+      // this avoids leaving an orphaned audio file while reporting success.
       if(m.audioPath){
-        try{ await deleteObject(storageRef(storage,m.audioPath)); }
-        catch(err){ console.warn("Audio delete (may be missing):",err); }
+        await supabaseDeleteVoice(m.audioPath);
       }
+      // Permanently remove the message document from Firestore (not a soft-delete).
       await deleteDoc(doc(db,"forumMessages",messageId));
       modal.classList.remove("open");
       forumToast("تم حذف الرسالة لدى الجميع.");
     }catch(e){
       console.error("Forum delete:",e);
-      forumToast(e.code==="permission-denied"?"لا تملك صلاحية حذف الرسالة.":"تعذر حذف الرسالة.");
+      const detail=String(e?.message||"").toLowerCase();
+      if(e.code==="permission-denied") forumToast("قواعد Firestore منعت الحذف. راجع صلاحيات حذف forumMessages.");
+      else if(detail.includes("supabase voice delete failed (401")||detail.includes("supabase voice delete failed (403")) forumToast("Supabase منع حذف ملف الصوت. أضف سياسة DELETE للـ bucket ثم حاول مرة تانية.");
+      else forumToast("تعذر حذف الرسالة بالكامل. الرسالة لم تُحذف من المنتدى؛ راجع Console وحاول مرة تانية.");
     }finally{
       forum$("forumConfirmYes").disabled=false;
     }
@@ -1311,10 +1386,8 @@ async function forumSendVoiceMessage(){
     const messageId="audio_"+user.uid+"_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
     const ext=forumGetAudioExt(forumRecordedMime);
     const path="forumAudio/"+user.uid+"/"+messageId+"."+ext;
-    sref=storageRef(storage,path);
-    await uploadBytes(sref,forumRecordedBlob,{contentType:forumRecordedMime||"audio/webm"});
+    const url=await supabaseUploadVoice(path,forumRecordedBlob,forumRecordedMime||"audio/webm");
     uploaded=true;
-    const url=await getDownloadURL(sref);
     const payload={
       text:"",
       senderId:user.uid,
@@ -1360,7 +1433,7 @@ async function forumSendVoiceMessage(){
     forumToast(msg);
     forum$("forumStatus").textContent="فشل الإرسال، جرّب تاني.";
     if(uploaded&&sref){
-      try{ await deleteObject(sref); }catch(err){ console.warn("Orphan cleanup failed",err); }
+      if(uploaded && sref){ try{ await supabaseDeleteVoice(sref); }catch(err){ console.warn("Orphan cleanup failed",err); } }
     }
   }finally{
     forumUploading=false;
@@ -1389,6 +1462,7 @@ function forumToggleAudio(messageId){
     forumAudioState.currentBtn=btn;
     forumAudioState.currentFill=fill;
     forumAudioState.currentTime=time;
+    audioEl.playbackRate=forumAudioSpeeds.get(messageId)||1;
     audioEl.play().then(()=>{ if(btn)btn.innerHTML='<span class="material-symbols-rounded">pause</span>'; })
       .catch(()=>forumToast("تعذر تشغيل الفويس."));
     return;
@@ -1399,6 +1473,7 @@ function forumToggleAudio(messageId){
   // Load new
   try{ audioEl.pause(); }catch(e){}
   audioEl.src=m.audioUrl;
+  audioEl.playbackRate=forumAudioSpeeds.get(messageId)||1;
   forumAudioState.currentId=messageId;
   forumAudioState.currentBtn=btn;
   forumAudioState.currentFill=fill;
